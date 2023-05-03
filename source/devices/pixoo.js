@@ -213,6 +213,18 @@ export default class Pixoo {
 		return this._compile(this._assembleMessage(message));
 	}
 
+	rawmessage(settings) {
+		settings = settings || {};
+		let raw = settings.msg || "";
+		console.log("   Raw Message:", raw);
+		try {
+			return this._compile(this._assembleMessage(raw));
+		} catch (e) {
+			console.error(e);
+			return this._compile(this._assembleMessage(""));
+		}
+	}
+
 	// --- Helper methods ---
 
 	_intHex(int) {

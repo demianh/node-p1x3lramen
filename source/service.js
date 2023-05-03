@@ -43,6 +43,7 @@ export default class Service {
 		apiRouter.get("/effect", this._effect.bind(this));
 		apiRouter.get("/climate", this._climate.bind(this));
 		apiRouter.get("/channel", this._channel.bind(this));
+		apiRouter.get("/rawmessage", this._rawmessage.bind(this));
 
 		// routes
 
@@ -247,6 +248,18 @@ export default class Service {
 		}
 
 		const msg = this.device.visualization(settings); 
+		this.connection.writeAll(msg);
+
+		return this._status(req, res);
+	}
+
+	async _rawmessage(req, res) {
+		const settings = {};
+		if (req.query.msg) {
+			settings.msg = req.query.msg;
+		}
+
+		const msg = this.device.rawmessage(settings);
 		this.connection.writeAll(msg);
 
 		return this._status(req, res);
