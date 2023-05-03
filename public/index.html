@@ -98,7 +98,7 @@
 	<footer></footer>
 	<script type="text/javascript">
 		document.querySelectorAll('input[name="brightness"]')[0].addEventListener('change', function (event) { 
-			fetch("http://localhost:8000/api/brightness?level=" + event.target.value, {method: "GET" })
+			fetch("/api/brightness?level=" + event.target.value, {method: "GET" })
 				.then(response => response.json())
 				.then(result => {
 					console.log("Success:", result, "brightness:", result.config.brightness);
@@ -106,7 +106,7 @@
 		})
 		document.querySelectorAll('input[name="color"]')[0].addEventListener('input', function (event) { 
 			console.log("color:", event.target.value);
-			fetch("http://localhost:8000/api/lighting?mode=0&color=" + event.target.value.substring(1), {method: "GET" })
+			fetch("/api/lighting?mode=0&color=" + event.target.value.substring(1), {method: "GET" })
 				.then(response => response.json())
 				.then(result => {
 					console.log("Success:", result, "brightness:", result.config.brightness);
@@ -116,7 +116,7 @@
 		document.querySelectorAll('input[name="channel"]').forEach(item => {
 			item.addEventListener('change', function (event) { 
 				console.log("channel:", event.target.value);
-				fetch("http://localhost:8000/api/channel?mode=" + event.target.value, {method: "GET" })
+				fetch("/api/channel?mode=" + event.target.value, {method: "GET" })
 					.then(response => response.json())
 					.then(result => {
 						console.log("Success:", result);
