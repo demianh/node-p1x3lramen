@@ -32,6 +32,20 @@
 
 		<hr />
 
+		<section>
+			<h2>Image Upload</h2>
+			<form>
+				<p class="field">
+					<label for="image">Choose GIF file: </label>
+					<input name="image" id="upload" type="file" accept=".gif"/>
+				</p>
+				<p class="actions">
+					<input type="button" onclick="uploadImage()" value="Upload image"/>
+				</p>
+			</form>
+		</section>
+		<hr />
+
 		<form action="/api/clock" method="GET">
 			<fieldset>
 				<legend>Clock command</legend>
@@ -124,6 +138,24 @@
 			});
 
 		});
+		uploadImage = function() {
+			var reader = new FileReader();
+			reader.onload = function(e) {
+				imgdataurl = e.target.result;
+				console.log("imgdataurl:", imgdataurl);
+				let data = {
+					dataurl: imgdataurl
+				}
+				console.log("data:", data);
+				fetch("/api/image", {method: "POST", body: JSON.stringify(data), headers: { "Content-Type": "application/json"}, })
+					.then(response => response.json())
+					.then(result => {
+						console.log("Success:", result);
+					});
+			}
+			reader.readAsDataURL(document.getElementById("upload").files[0]);
+
+		}
 		</script>
 </body>
 </html>

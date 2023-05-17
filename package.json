@@ -24,8 +24,10 @@
   "homepage": "https://github.com/jfroehlich/pixelramen#readme",
   "dependencies": {
     "@ctrl/tinycolor": "^3.4.0",
+    "body-parser": "^1.20.2",
     "esm": "^3.2.25",
     "express": "^4.17.1",
+    "get-pixels": "^3.3.3",
     "node-bluetooth-serial-port": "^2.2.7"
   }
 }

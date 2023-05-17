@@ -8,15 +8,15 @@ const DEFAULTS = {
 	weather: 0,					// weather modes: 1 clear, 3 cloudy sky, 5 thunderstorm, 6 rain, 8 snow, 9 fog
 	temperature: 0,				// temperature from -127 to 128
 	lightingMode: 0,			// Lighting modes: 0 = Custom, 1 = love, 2 = plants, 3 = no mosquito, 4 = sleep
-	clockMode: 0,				// Clock modes: 0 fullscreen, 1 rainbow, 2 boxed, 3 analog square, 4 fullscreen negative, 5 analog round, 6 widescreen 
+	clockMode: 0,				// Clock modes: 0 fullscreen, 1 rainbow, 2 boxed, 3 analog square, 4 fullscreen negative, 5 analog round, 6 widescreen
 	powerScreen: true,			// switch screen on/off
-	showTime: true,				// show the time in clock channel 
-	showWeather: false,			// show weather in clock channel 
-	showTemperature: false,		// show temperature in clock channel 
-	showCalendar: false,		// show calendar in clock channel 
+	showTime: true,				// show the time in clock channel
+	showWeather: false,			// show weather in clock channel
+	showTemperature: false,		// show temperature in clock channel
+	showCalendar: false,		// show calendar in clock channel
 	redScore: 0,				// the red score 0-999
 	blueScore: 0,				// the blue score 0-999
-	visualizationMode: 0,		// 
+	visualizationMode: 0,		//
 	fulldayMode: true			// switches between 12h and 24h mode
 };
 
@@ -26,13 +26,13 @@ export default class Pixoo {
 	}
 
 	// --- Base Commands ---
-	
+
 	fullday(settings) {
 		settings = settings || {};
 		if (typeof settings.enable === "boolean") {
 			this.config.fulldayMode = settings.enable;
 		}
-		
+
 		// thanks julijane
 		const message = [
 			"2d",										// Prefix for light
@@ -40,7 +40,7 @@ export default class Pixoo {
 		].join("");
 		return this._compile(this._assembleMessage(message));
 	}
-	
+
 	brightness(settings) {
 		settings = settings || {};
 		let level = settings.level || this.config.brightness;
@@ -49,7 +49,7 @@ export default class Pixoo {
 		this.config.brightness = level;
 
 		const message = [
-			"74",										// Prefix 
+			"74",										// Prefix
 			this._percentHex(this.config.brightness)	// Brightness from 0-100
 		].join("");
 		return this._compile(this._assembleMessage(message));
@@ -60,7 +60,7 @@ export default class Pixoo {
 		let date = settings.date || new Date();
 
 		const message = [
-			"18",										// Prefix 
+			"18",										// Prefix
 			this._intHex(Number(date.getFullYear().toString().padStart(4, "0").slice(2))),
 			this._intHex(Number(date.getFullYear().toString().padStart(4, "0").slice(0, 2))),
 			this._intHex(date.getMonth() + 1),
@@ -77,9 +77,9 @@ export default class Pixoo {
 		settings = settings || {};
 		this.config.weather = settings.weather || this.config.weather;
 		this.config.temperature = settings.temperature || this.config.temperature;
-		
+
 		const message = [
-			"5F",										// prefix 
+			"5F",										// prefix
 			(this.config.temperature >= 0) ? this._intHex(this.config.temperature) : this._intHex(256 + this.config.temperature),
 			this._intHex(this.config.weather)
 		].join("");
@@ -87,7 +87,7 @@ export default class Pixoo {
 	}
 
 	// --- Clock Mode ---
-	
+
 	/**
 	 * Switches to clock mode and sets clock mode options.
 	 *
@@ -116,7 +116,7 @@ export default class Pixoo {
 	}
 
 	// --- Lighting Mode --
-	
+
 	lighting(settings) {
 		settings = settings || {};
 		this.config.lightingMode = settings.mode || this.config.lightingMode;
@@ -149,7 +149,7 @@ export default class Pixoo {
 		].join("");
 		return this._compile(this._assembleMessage(message));
 	}
-	
+
 	// --- Effects channel ---
 
 	effect(settings) {
@@ -162,7 +162,7 @@ export default class Pixoo {
 		].join("");
 		return this._compile(this._assembleMessage(message));
 	}
-	
+
 	// --- Visualization channel ---
 
 	visualization(settings) {
@@ -175,19 +175,115 @@ export default class Pixoo {
 		].join("");
 		return this._compile(this._assembleMessage(message));
 	}
-	
+
+	async image(settings) {
+		var getPixels = require("get-pixels")
+
+		function getColorOfPixel(pixels, x, y) {
+			try {
+				let alpha = pixels.get(0,y,x,3);
+				if (alpha == 0) return "FFFFFF";
+				let color = [
+					pixels.get(0,y,x,0).toString(16).padStart(2, '0').toUpperCase(),
+					pixels.get(0,y,x,1).toString(16).padStart(2, '0').toUpperCase(),
+					pixels.get(0,y,x,2).toString(16).padStart(2, '0').toUpperCase(),
+				]
+				return color.join('');
+			} catch(e) {
+				return "000000";
+			}
+		}
+
+		let promise = new Promise((resolve, reject) => {
+			console.log(settings)
+			getPixels(settings.dataurl, function(err, pixels) {
+				if(err) {
+				  console.log("Bad image path")
+				  reject();
+				  return
+				}
+
+				let data = {
+					colorMap: [],
+					image: []
+				}
+
+				// loop over all 16x16 pixels
+				for (var x = 0; x < 16; x++) {
+					let row = [];
+					for (var y = 0; y < 16; y++) {
+						let color = getColorOfPixel(pixels, x, y);
+						if (data.colorMap.indexOf(color) < 0) {
+							data.colorMap.push(color);
+						}
+						row.push(data.colorMap.indexOf(color));
+					}
+					data.image.push(row);
+				}
+				resolve(data);
+			  })
+		});
+
+		let img = await promise;
+
+		const colorData = [];
+		const pixelData = [];
+		for (let x = 0; x < 16; x++) {
+			for (let y = 0; y < 16; y++) {
+				const val = img.image[y][x];
+				const color = img.colorMap[parseInt(val)]
+
+				if (!colorData.includes(color)) colorData.push(color);
+
+				pixelData[x + 16 * y] = colorData.indexOf(color);
+			}
+		}
+
+		// RRGGBBRRGGBB etc.
+		const colorString = colorData.join('');
+
+		// This part is mostly copied from https://github.com/RomRider/node-divoom-timebox-evo/blob/master/PROTOCOL.md#pixel-string-pixel_data
+		let nbBitsForAPixel = Math.log(colorData.length) / Math.log(2);
+		let bits = Number.isInteger(nbBitsForAPixel)
+			? nbBitsForAPixel
+			: (Math.trunc(nbBitsForAPixel) + 1);
+		if (bits === 0) bits = 1;
+
+		let pixelString = '';
+		pixelData.forEach((pixel) => {
+			pixelString += pixel.toString(2).padStart(8, '0').split("").reverse().join("").substring(0, bits)
+		})
+
+		let pixBinArray = pixelString.match(/.{1,8}/g);
+		let pixelStringFinal = '';
+		pixBinArray.forEach((pixel) => {
+			pixelStringFinal += parseInt(pixel.split("").reverse().join(""), 2).toString(16).padStart(2, '0');
+		})
+
+		const message = [
+			'44000A0A04', // Header
+			'AA', // Image start
+			this._intLittleHex((14 + colorString.length * 6 + pixelStringFinal.length) / 2), // length
+			'000000', // animation frame time (0 for image)
+			this._intHex(colorData.length), // color count (00 for 256)
+			colorString,
+			pixelStringFinal
+		].join("");
+		return this._compile(this._assembleMessage(message));;
+	}
+
 	// --- Cloud channel ---
 
 	cloud(settings) {
 		throw new Error("Cloud channel is not implemented yet.");
 	}
-	
+
 	// --- Custom channel ---
 
 	custom(settings) {
 		throw new Error("Custom channel is not implemented yet.");
 	}
-	
+
 	// --- Switch channels ---
 
 	channel(settings) {
@@ -278,14 +374,14 @@ export default class Pixoo {
 
 	_assembleMessage(payload) {
 		let lengthHS = this._intLittleHex((payload.length + 4) / 2);
-		
+
 		let msg = "" + lengthHS + payload;
 		let sum = 0;
 		for (var i = 0, l = msg.length; i < l; i+= 2) {
 			sum += parseInt(msg.substr(i, 2), 16);
 		}
 		let crc = sum % 65536;
-		let crcHS = this._intLittleHex(crc); 
+		let crcHS = this._intLittleHex(crc);
 
 		return [ "01", lengthHS, payload, crcHS, "02" ].join("");
 	}
@@ -316,6 +412,6 @@ export default class Pixoo {
 	}
 
 	_decompile(buffer) {
-		return buffer.toString("ascii");	
+		return buffer.toString("ascii");
 	}
 }
